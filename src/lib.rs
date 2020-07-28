@@ -11,6 +11,7 @@ use diesel::debug_query;
 use diesel::deserialize::QueryableByName;
 use diesel::prelude::*;
 use diesel::query_builder::{AsQuery, QueryFragment, QueryId};
+use diesel::r2d2::R2D2Connection;
 use diesel::sql_types::HasSqlType;
 
 /// Wraps a diesel `Connection` to time and log each query using
@@ -126,6 +127,13 @@ fn log_query(query: &str, duration: Duration) {
         );
     } else {
         debug!("Query ran in {:.1} ms: {}", duration_to_ms(duration), query);
+    }
+}
+
+impl R2D2Connection for LoggingConnection<diesel::pg::PgConnection>
+{
+    fn ping(&self) -> QueryResult<()> {
+        self.execute("SELECT 1").map(|_| ())
     }
 }
 
